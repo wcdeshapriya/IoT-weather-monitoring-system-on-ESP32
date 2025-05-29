@@ -1,0 +1,20 @@
+ESP32 Pinout Plan for Your Weather Station:
+Sensor/Component	Description	Recommended ESP32 GPIO Pin
+Temperature & Humidity (DHT11/DHT22)	Data Pin	GPIO 4
+Soil Moisture Sensor (Analog)	Analog Output	GPIO 34 (ADC1 CH6)
+Rain Sensor (Digital)	Digital Output	GPIO 26
+Tilt Sensor (Analog)	Analog Output	GPIO 35 (ADC1 CH7)
+Tilt Sensor (Digital)	Digital Output	GPIO 27
+Pressure Sensor (e.g., BMP180 I2C)	SDA & SCL Lines	GPIO 21 (SDA), GPIO 22 (SCL)
+
++-------------------------+
+|         ESP32            |
+|                         |
+| GPIO  4  --> DHT11/22    |
+| GPIO 34  --> Soil Sensor |
+| GPIO 26  --> Rain Sensor |
+| GPIO 35  --> Tilt Analog |
+| GPIO 27  --> Tilt Digital|
+| GPIO 21  --> I2C SDA     |
+| GPIO 22  --> I2C SCL     |
++-------------------------+
