@@ -1,0 +1,231 @@
+/*  
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+:::::::::    THIS PROJECT Developed by: MR. DESHAPRIYA.W.C    :::::::
+:::::::::    First release date: 1ST OF AUGUST 2024           :::::::
+:::::::::    Contact:  deshapriya.w.c@gmail.com               :::::::
+:::::::::              0713480683                             ::::::: 
+:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+*/
+#include <WiFi.h>
+#include <WebServer.h>
+#include "DHT.h"
+#include <Stepper.h>
+#include <Wire.h>
+#include <Adafruit_BMP085.h>
+
+#define DHTTYPE DHT11   // DHT 11
+const int soil_SensorPin = 34;
+int soilMoistureValue = 0;
+int soilmoisturepercent=0;
+
+const int rain_sensor = 35;
+int rain_s_data =0;
+
+const int tilt1_sensor_dig = 12;
+int tilt1_data =0;
+
+const int tilt2_sensor_ana = 32;
+int tilt2_data =0;
+
+Adafruit_BMP085 bmp;
+int Pressure =0;
+
+uint8_t DHTPin = 4; 
+uint8_t M1_pin=19;
+uint8_t M2_pin=18; //21
+uint8_t M3_pin=5; //22
+uint8_t M4_pin=23;
+
+
+const int stepsPerRevolution = 200 ; // change this to fit the number of steps per revolution
+Stepper myStepper(stepsPerRevolution, 19, 18, 5, 23);
+/*Put your SSID & Password*/
+const char* ssid = "ESP_project";  // Enter SSID here
+const char* password = "12345678";  //Enter Password here
+
+uint8_t max_connections=8;//Maximum Connection Limit for AP
+int current_stations=0, new_stations=0;
+
+WebServer server(80);
+DHT dht(DHTPin, DHTTYPE);                
+
+float Temperature;
+float Humidity;
+bool ff=false, bb=false;
+ 
+void setup() {
+  Serial.begin(9600);
+  bmp.begin();
+  delay(100);  
+  //sensor pins 
+  pinMode(DHTPin, INPUT);  //D4
+  //pinMode(rain_sensor, INPUT); //D2
+  //pinMode(tilt1_sensor , INPUT); //18
+  //pinMode(tilt2_sensor , INPUT);//5
+//  //pinMode(SensorPin , INPUT);//15
+//  pinMode(M1_pin,OUTPUT);
+//  pinMode(M2_pin,OUTPUT);
+//  pinMode(M3_pin,OUTPUT);
+//  pinMode(M4_pin,OUTPUT);
+  myStepper.setSpeed(80);   // set the speed at 60 rpm
+  dht.begin(); 
+  Serial.println("Connecting to ");
+  Serial.println(ssid);
+if(WiFi.softAP(ssid, password,1,false,max_connections)==true)  {
+      Serial.print("Access Point is Created with SSID: ");
+      Serial.println(ssid);
+      Serial.print("Max Connections Allowed: ");
+      Serial.println(max_connections);
+      Serial.print("Access Point IP: ");
+      Serial.println(WiFi.softAPIP());
+  }
+  else  {
+    Serial.println("Unable to Create Access Point");
+    Serial.print(".");
+  }
+
+  server.on("/", handle_OnConnect);
+  server.on("/LED1",handle_1);
+  server.on("/LED2",handle_2);
+  server.onNotFound(handle_NotFound);
+  server.begin();
+  Serial.println("HTTP server started");
+}
+void loop() {  
+  server.handleClient();  
+   //soil Moisture Sensor 
+  soilMoistureValue = analogRead(soil_SensorPin);  //put Sensor insert into soil  
+  soilmoisturepercent = map(soilMoistureValue, 4095, 1, 0, 100);
+  Serial.print("soil moisture :"); 
+  Serial.println(soilmoisturepercent);
+   
+  rain_s_data= analogRead(35); 
+  rain_s_data = map(rain_s_data, 4095, 1, 0, 100);
+  Serial.print("rain data : ");
+  Serial.println(rain_s_data);
+
+  tilt1_data = analogRead(32 ); 
+  tilt1_data = map(tilt1_data, 4095,1 , 0, 100);
+  Serial.print("Tilt (analog)  data: ");
+  Serial.println(tilt1_data );
+  
+  tilt2_data = digitalRead(12); 
+  Serial.print("Tilt (digital) data: ");
+  Serial.println(tilt2_data );
+
+  Temperature = dht.readTemperature(); // Gets the values of the temperature
+  Serial.print("Temperature : ");
+  Serial.print(Temperature );
+   Serial.println(" 'C");
+  Humidity = dht.readHumidity(); // Gets the values of the humidity 
+  Serial.print("Humidity : ");
+  Serial.print(Humidity);  
+  Serial.println(" %");
+  
+  Pressure=bmp.readPressure();
+  Serial.print("Pressure = ");
+  Serial.print(Pressure);
+  Serial.println(" Pa");
+   
+  Serial.println("");  
+  delay(1000);
+ }
+
+
+void handle_OnConnect() {
+server.send(200, "text/html", SendHTML(Temperature,Humidity,soilmoisturepercent,rain_s_data,tilt1_data,tilt2_data,Pressure)); 
+Serial.print("handle_OnConnect: ");
+
+}
+
+void handle_1() {
+  //digitalWrite(M1_pin,HIGH);      // ON LED
+  Serial.println("steps Revolution clockwise");
+  for(int ii=0;ii<3;ii++){ 
+    myStepper.step(1024);  
+    }
+  digitalWrite(M1_pin,LOW);
+  digitalWrite(M2_pin,LOW);
+  digitalWrite(M3_pin,LOW);
+  digitalWrite(M4_pin,LOW);
+  delay(100);
+  server.sendHeader("Location","/");        // Add a header to respond with a new location for the browser to go to the home page again
+  server.send(303); 
+  Serial.print("handle_1: ");  
+  }
+void handle_2() {
+  //digitalWrite(M1_pin,LOW);      // ON LED
+  Serial.println("steps Revolution clockwise");
+  for(int ii=0;ii<3;ii++){
+    myStepper.step(-1024 );
+  }
+  digitalWrite(M1_pin,LOW);
+  digitalWrite(M2_pin,LOW);
+  digitalWrite(M3_pin,LOW);
+  digitalWrite(M4_pin,LOW);  
+  delay(100);
+  server.sendHeader("Location","/");        // Add a header to respond with a new location for the browser to go to the home page again
+  server.send(303); 
+  Serial.print("handle_2: ");  
+  }  
+
+void handle_NotFound(){
+  server.send(404, "text/plain", "Not found");
+}
+
+String SendHTML(float Temperaturestat,float Humiditystat,float soilmoisturepercent,int rain_s_data,int tilt1_sensor,int tilt2_sensor, int Pressure){
+  String ptr = "<!DOCTYPE html> <html>\n";
+  ptr +="<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">\n";
+  ptr +="<title>ESP32 Weather Report</title>\n";
+  ptr +="<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}\n";
+  ptr +="body{margin-top: 50px;} h1 {color: #444444;margin: 50px auto 30px;} h3{color:#444444; margin-bottom: 50px;}\n";
+  ptr +="p {font-size: 24px;color: #444444;margin-bottom: 10px;}\n";
+   ptr+=".button{display:block; width:180px; background-color:#f48100; border:none; color:white; padding: 13px 30px; text-decoration:none; font-size:20px; margin: 0px auto 35px; cursor:pointer; border-radius:4px;}\n";
+   ptr+=".button-on{background-color:#f48100;}\n";
+   ptr+=".button-on:active{background-color:#f48100;}\n";
+   ptr+=".button-off{background-color:#26282d;}\n";
+   ptr+=".button-off:active{background-color:#26282d;}\n";
+  ptr +="</style>\n";
+  ptr +="</head>\n";
+  ptr +="<body>\n";
+  ptr +="<div id=\"webpage\">\n";
+  ptr +="<h1>ESP32 Weather Report</h1>\n";
+  
+  ptr +="<p>Temperature: ";
+  ptr +=Temperaturestat;
+  ptr +=" 'C</p>";
+  ptr +="<p>Humidity: ";
+  ptr +=Humiditystat;
+  ptr +=" %</p>";
+  
+  ptr +="<p>Soil Moisture: ";
+  ptr +=(int)soilmoisturepercent;
+  ptr +="</p>";
+
+  ptr +="<p>Rain: ";
+  ptr +=(int)rain_s_data;
+  ptr +="</p>";
+  
+  ptr +="<p>Tilt (analog)  data: ";
+  ptr +=(int)tilt1_sensor;
+  ptr +="</p>";
+  
+  ptr +="<p>Tilt (digital) data: ";
+  ptr +=(int)tilt1_sensor;
+  ptr +="</p>";
+
+  ptr +="<p>Pressure : ";
+  ptr +=(int)Pressure;
+  ptr +=" Pa</p>";
+  ptr +="</p>"; 
+  
+  ptr+="<form  action =\"/LED1\" method=\"POST\"><input type=\"submit\" value=\"Go UP\" class=\"button button-off\"></form>\n";
+  ptr+="<form  action =\"/LED2\" method=\"POST\"><input type=\"submit\" value=\"Go DOWN\"class=\"button button-on\"></form>\n";
+  ptr +="</div>\n";
+  //ptr +="<a href="javascript: location.reload();">reload this page</a>";
+  ptr +="</body>\n";
+  ptr +="</html>\n";
+  
+  return ptr;
+}
