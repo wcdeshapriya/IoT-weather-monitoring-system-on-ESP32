@@ -2,8 +2,7 @@
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 :::::::::    THIS PROJECT Developed by: MR. DESHAPRIYA.W.C    :::::::
 :::::::::    First release date: 1ST OF AUGUST 2024           :::::::
-:::::::::    Contact:  deshapriya.w.c@gmail.com               :::::::
-:::::::::              0713480683                             ::::::: 
+:::::::::    Contact:  deshapriya.w.c@gmail.com               ::::::: 
 :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 */
